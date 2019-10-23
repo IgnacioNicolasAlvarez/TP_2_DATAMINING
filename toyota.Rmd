@@ -1,0 +1,477 @@
+---
+title: "Analisis exploratorio de dataSet 'Toyota Corolla'"
+author: "Alvarez Ignacio Nicolas"
+output:
+  html_notebook:
+    df_print: paged
+    fig:height: 4
+    fig:width: 6
+    theme: readable
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+fig:height: 4
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Este ejercicio consiste en realizar un análisis exploratorio sobre un dataset de vehiculos Toyota Corolla con 1436 instancias y 37 atributos. 
+
+El objetivo es conseguir un modelo de regresión lineal con un resultado aceptable interpretando cada paso del razonamiento necesario para llegar al objetivo.
+
+* El atributo objetivo es Price.   
+
+# Carga de Librerias
+```{r Carga de Librerias}
+library(fastDummies) # libreria para encoding
+library(car)
+library(corrplot) # lbreria para ver la correlacion entre variables
+library(mctest) # libreria para calculo de TOF Y VIF
+library(tidyverse) # libreria para limpieza de datos y formateo
+```
+
+# Lectura del DataSet
+
+```{r Lectura del DataSet}
+raw_data = read.csv("ToyotaCorolla.csv") 
+a_raw_data <- select(raw_data, -c("Model","Id"))
+```
+
+* El atributo **ID** no es representativo de cada instancia, decido no considerarlo en el modelo.     
+* El atributo **Model** no es representativo de cada instancia, decido no considerarlo en el modelo. 
+
+# DataSet
+
+```{r Visualizacion del DataSet}
+a_raw_data
+```
+
+# Estructura del DataSet
+
+```{r Estructura del DataSet}
+str(a_raw_data)
+```
+
+# Resumen del DataSet
+
+```{r Resumen del DataSet}
+summary(a_raw_data)
+```
+
+**Observaciones**   
+* El valor maximo de cc es de 16000, demasiado alto considerando la media.    
+* El atributo Fuel_Type es de tipo char, requerira un proceso de encoding.    
+* El valor de Cylinder es constante. 
+
+# Análisis exploratorio    
+
+## Price 
+
+```{r Price}
+par(mfrow=c(1,2))
+boxplot(a_raw_data$Price,main = "Precio Vehiculos Toyota Corolla",
+        ylab = "Precio ($)", notch = TRUE)
+
+hist(a_raw_data$Price,main = "Precio Vehiculos Toyota Corolla")
+```
+* Se observa que la mediana del precio de los vehiculos, ronda los $10000 aproximadamente. 
+* Se presentan valores atípicos con valores superiores a las $20000 y valores menores a $7000 aproximadamente.  
+
+## Mfg_Year
+     
+```{r Age_08_04}
+par(mfrow=c(1,2))
+
+boxplot(a_raw_data$Age_08_04,main = "Age_08_04")
+barplot(table(as.factor(a_raw_data$Age_08_04)),main = "Age_08_04")
+
+```
+* El atributo "Age_08_04" presenta valores outliers correspondientes a vehiculos nuevos cuya antiguedad es 0.  
+
+## Mfg_Year
+
+```{r Mfg_Year}
+par(mfrow=c(1,2))
+
+boxplot(a_raw_data$Mfg_Year,main = "Año de Mfg_Year")
+barplot(table(as.factor(a_raw_data$Mfg_Year)),main = "Mfg_Year")
+```
+
+## KM
+
+```{r Boxplot KM}
+par(mfrow=c(1,2))
+
+boxplot(a_raw_data$KM,main = "KM",
+        ylab = "KM", notch = TRUE)
+
+hist(a_raw_data$KM,main = "KM")
+
+```
+* El atributo "KM" presenta valores outliers. Destaco sobretodo un conjunto de valores superiores a los 200000. 
+
+
+## HP
+```{r HP}
+par(mfrow=c(1,2))
+
+boxplot(a_raw_data$HP,main = "HP",
+        ylab = "HP", notch = FALSE)
+
+barplot(table(as.factor(a_raw_data$HP)),main = "HP")
+```
+
+* El atributo "HP" presenta un valor outlier superior a 180. Según una investigacion realizada en medios externos al dataset, el valor si corresponde a un modelo de Toyota Corolla.    
+
+
+## CC
+  
+```{r Boxplot CC}
+par(mfrow=c(1,2))
+
+boxplot(a_raw_data$cc,main = "Cilindrada",
+        ylab = "CC", notch = FALSE)
+
+barplot(table(as.factor(a_raw_data$cc)),main = "Cilindrada")
+```
+
+* El atributo "CC" presenta un outlier notorio superior a 16000, este valor esta fuera del contexto de un vehiculo toyota corolla, donde los valores promedio rondan el 100.    
+
+## Quarterly_Tax
+
+```{r Boxplot Quarterly_Tax}
+par(mfrow=c(1,2))
+
+boxplot(a_raw_data$Quarterly_Tax, main="Quarterly_Tax")
+
+hist(a_raw_data$Quarterly_Tax)
+```
+
+* El atributo "Quarterly_Tax" presenta outliers para valores superiores a 150 y valores menores a 50, sobre una mediana de 70 aproximadamente. 
+
+## Weight
+
+```{r Weight}
+par(mfrow=c(1,2))
+
+boxplot(a_raw_data$Weight, main="Peso(KG)")
+hist(a_raw_data$Weight)
+```
+
+* El atributo "Weight" presenta outliers para valores superiores a 1150 sobre una mediana de 1050 aproximadamente.
+
+## Fueltype y Radio Cassete
+
+```{r Plot Fueltype y Radio Cassete}
+lbls <- c("0: No tiene", "1: Tiene")
+
+par(mfrow=c(1,2)) 
+
+barplot(table(as.factor(a_raw_data$Fuel_Type)), main="Fuel_Type")
+pie(x = table(a_raw_data$Radio_cassette), labels = lbls, main="Radio Cassete")
+```
+
+## Metallic Rim y Backseat Divider
+
+```{r Plot Metallic Rim y Backseat Divider}
+
+par(mfrow=c(1,2)) 
+
+pie(x = table(a_raw_data$Metallic_Rim), labels = lbls,  main="Metallic Rim")
+pie(x = table(a_raw_data$Backseat_Divider) , labels = lbls,  main="Backseat_Divider")
+```
+
+## Mistlamp, Radio y Sport Model
+
+```{r Plot Mistlamp, Radio y Sport Model}
+par(mfrow=c(1,3))
+
+pie(x = table(a_raw_data$Mistlamps) , labels = lbls,  main="Mistlamps")
+pie(x = table(a_raw_data$Radio), labels = lbls,  main="Radio")
+pie(x = table(a_raw_data$Sport_Model), labels = lbls,  main="Sport_Model")
+```
+
+## Central Lock, CD Player y BoardComputer
+
+```{r Plot Central Lock, CD Player y BoardComputer}
+
+par(mfrow=c(1,3))
+
+pie(x = table(a_raw_data$Central_Lock), labels = lbls, main="Central_Lock")
+pie(x = table(a_raw_data$CD_Player), labels = lbls, main="CD_Player")
+pie(x = table(a_raw_data$Boardcomputer), labels = lbls, main="Boardcomputer")
+
+```
+
+## Airco, Airbag_2 y Airbag_1
+
+```{r Plot Airco, Airbag_2 y Airbag_1}
+par(mfrow=c(1,3))
+
+pie(x = table(a_raw_data$Airco), labels = lbls,  main="Airco")
+pie(x = table(a_raw_data$Airbag_2), labels = lbls,  main="Airbag_2")
+pie(x = table(a_raw_data$Airbag_1), labels = lbls,main="Airbag_1")
+
+```
+
+## Guarantee Period y Automatic Airco
+
+```{r Plot Guarantee Period y Automatic Airco}
+
+par(mfrow=c(1,2))
+
+barplot(table(as.factor(a_raw_data$Guarantee_Period)), main="Guarantee_Period") 
+pie(x = table(a_raw_data$Automatic_airco), labels = lbls,  main="Automatic_airco")
+
+```
+
+## MFR Guarantee, Gears y BOVAG Guarantee
+
+```{r Plot MFR Guarantee, Gears y BOVAG Guarantee}
+
+par(mfrow=c(1,3))
+
+pie(x = table(a_raw_data$Mfr_Guarantee), labels = lbls, main="Mfr_Guarantee")
+barplot(table(as.factor(a_raw_data$Gears)), main="Gears")
+pie(x = table(a_raw_data$BOVAG_Guarantee), labels = lbls, main="BOVAG_Guarantee")
+```
+
+## Doors, Automatic y ABS
+
+```{r Plot Doors, Automatic y ABS}
+par(mfrow=c(1,3))
+
+barplot(table(as.factor(a_raw_data$Doors)), main="Doors")
+pie(x = table(a_raw_data$Automatic),labels = lbls, main="Automatic")
+pie(x = table(a_raw_data$ABS),labels = lbls, main="ABS")
+```
+
+# Estudio de Variable Objetivo "Price"
+
+## Distribucion de Price
+```{r Histograma de Price}
+hist(a_raw_data$Price, col="blue", breaks = 60, freq = F)
+lines(density(a_raw_data$Price), col = "red", lwd=2)
+rug(a_raw_data$Price)
+```
+
+## Relacion Price vs Todos
+```{r Graficos de Dispersion: Price vs Todos}
+plot(Price~., data=a_raw_data,col="blue")
+```
+
+# Seleccion y modificacion de Variables    
+
+### Encoding de atributo Fuel_type      
+
+* El atributo Fuel_type es de tipo char, y representa una categoria con varios posibles valores, por lo tanto es necesario realizar un procedimiento de encoding. Tambien es recomendable eliminar una de los columnas producto del enconding para evitar problemas de colinealidad.
+
+```{r Encoding de Fuel_Type}
+data_set <- dummy_cols(a_raw_data, select_columns = "Fuel_Type")
+data_set <- select(data_set, -c("Fuel_Type"))
+```
+
+## Estudio de correlacion
+```{r Estudio de correlacion}
+corrplot(cor(data_set), type="upper", method="pie")
+```
+## Busqueda de posible Colinealidad
+
+```{r Calculo de VIF y TOL sobre DataSet}
+imcdiag(select(data_set, -c("Price")), data_set$Price)
+```
+* Mediante el calculo de VIF y haciendo principal hincapíe en los atributos cuyo valor de VIF es muy superior a 5, es posible que exista colinealidad vinculado con los atributos **Age_08_04,Mfg_Month, Mfg_Year, Radio, Fuel_Type_CNG, Fuel_Type_Diesel, Fuel_Type_Petrol** 
+
+# Modelo: Regresion Lineal Raw
+
+```{r Modelo Inicial de Regresion Lineal}
+linearMod <- lm(formula = Price ~ ., data=data_set)
+summary(linearMod)
+```
+
+A partir de este modelo de regresión lineal, obtengo las siguientes consideraciones:     
+* Las variables con un alto T Value (posibles variables más significativas) son: **Age_08_04, Mfg_Month, KM, Weight, Automatic_airco**, entre otras.    
+* Algunas variables presentan un T Value muy cercano a cero, posiblemente no son muy relevantes para el modelo: **Met_Color, Doors, Gears, Airbag_1, Airbag_2, Central_Lock, Power_Steering, Mistlamps, Radio_cassette**.          
+* El precio base de un vehiculo es de 2.668e+03.    
+* El modelo tiene una exactitud de 0.90, el cual es un buen valor. Sin embargo, existen problemas de colinealidad.   
+* Es necesario tomar acciones sobre **Mfg_Year y Fuel_Type_Petrol** por los problemas de colinealidad.   
+
+## Plot Residuos
+
+```{r Plot de Residuos}
+par(mfrow=c(2,2))
+plot(linearMod)
+```
+
+A partir de este modelo de regresión lineal, observo lo siguiente:  
+
+* En el grafico **Residuals vs Fitted** se observa una curva, casi recta, que tiende a cero, que es lo deseable. Pero se manifiesta la presencia de puntos que tiran de la curva, como es el caso del punto 110 y 222. Es necesario un retrabajo.   
+* En el grafico **Normal Q-Q** se observa que la mayoria de los puntos se adecuan a la recta (lo que indica una distribucion de residuos similar a la distribucion normal), pero existen puntos como el 222 y el 81, que estan influenciando la forma de la recta, es necesario un retrabajo.    
+* En el grafico **Scale-Location** se observa una curva abonbada que posiblemente esta siendo influia por la gran concentracion de puntos alrrededor de 10000.    
+* En el grafico **Residuals vs Leverage** se oberva que hay valores que se encuentran fuera de la distancia de Cook, como el punto 81 o 222. Es necesario un retrabajo.    
+
+## Plot Residuos: Histograma
+
+```{r Histograma de Residuos}
+residuos = resid(linearMod)
+hist(residuos, col="blue", breaks = 60, freq = F)
+lines(density(residuos), col = "red", lwd=2)
+rug(residuos)
+```
+
+* Los residuos del modelo de regresión lineal aplicado sobre el dataSet original, sin consideración de los valores atípicos, presenta una distribución similar a una distribución normal, con un sesgo hacia la izquierda.   
+* El modelo de regresión lineal aplicado sobre el dataSet original, presenta una exactitud de 0.90. Sin embargo, el conjunto de datos original presenta problemas de colinealidad.   
+
+
+# Limpieza de datos        
+
+* Se elimina el atributo **cylinders** porque es un valor constante que no es significativo.   
+* Se eliminan los atributos **cd player y radio cassete**, por ser considerados como derivados del atributo radio.     
+* Se eliminan los atributos **Met_Color, Doors, Gears, Airbag_1, Airbag_2, Central_Lock, Power_Steering, Mistlamps y Radio_cassette** debido a la poca relevancia que tienen sobre el modelo, basado en su T Value.   
+* Se elimina el atributo **Fuel_Type_Diesel** como resultado del proceso previo de encoding.   
+
+```{r Seleccion 1°}
+data_set_1 = select(data_set, -c("Cylinders", "Mfg_Month", "Fuel_Type_CNG","Fuel_Type_Diesel","Radio_cassette"))
+```
+
+
+## Estudio de correlacion
+```{r Estudio de correlacion DataSet 1}
+corrplot(cor(data_set_1), type="upper", method="pie")
+```
+## Busqueda de posible Colinealidad
+
+```{r Calculo de VIF y TOL sobre DataSet 1°}
+imcdiag(select(data_set_1, -c("Price")), data_set_1$Price)
+```
+
+```{r Seleccion 2°}
+data_set_1 = select(data_set_1, -c("Met_Color", "Doors" , "Gears" , "Airbag_1" , "Airbag_2" , "Central_Lock" , "Power_Steering" , "Radio" , "Mistlamps"))
+```
+
+## Estudio de correlacion 2
+```{r Estudio de correlacion DataSet 2°}
+corrplot(cor(data_set_1), type="upper", method="pie")
+```
+
+```{r Calculo de VIF y TOL sobre DataSet 2°}
+imcdiag(select(data_set_1, -c("Price")), data_set_1$Price)
+```
+
+# Outliers   
+
+## Tratamiento de Outliers 
+
+* El atributo CC presenta un outlier(valor atípico) de CC = 16000. No es un valor coherente con el contexto de un vehiculo Toyota Corolla. Considero que probablemente fue un error y supongo que se agrego un cero de más, siendo el valor correcto 1600.   
+* El atributo Guarantee_Period presenta un outlier de Guarantee_Period = 13.Considero que probablemente fue un error y decido imputar el valor 12.   
+* El atributo KM presenta outliers para valores superiores a 150000 y valores menos a 10000. Si bien son valores coherentes dentro del contexto de vehiculos, al estar la mayor concentracion de los vehiculos dentro del **intervalo (10000,120000)**, decido recortar el dataSet, reduciendo su tamaño un 12%.     
+* El atributo Age_08_04 presenta outliers para instancias cuyo Age_08_04 es menor a 25.   
+* El atributo HP presenta outliers para valores superiores a 120 y valores menores a 80. Si bien son valores coherentes para algunos modelos de Toyota Corrolla, son casos particulares no representativos del conjunto de vehiculos.    
+* Tras realizar estas operaciones, el dataset restante posee un 80% de las instancias del dataset original.     
+* El atributo Price posee outliers para valores menores a 6500 y valores superiores a 15000. Por este motivo considero el **intervalo (6500,14500)**, dado que los valores excluidos no son representativos de la mayoria del conjunto.    
+* El dataset restante posee un 72% de las instancias del dataset original.   
+
+## Limpieza de datos 
+```{r Limpieza}
+
+clean_data <- data_set_1
+
+clean_data = clean_data %>%  mutate(cc = ifelse(cc == 16000, 1600, cc))
+clean_data = clean_data %>%  mutate(Guarantee_Period = ifelse(Guarantee_Period == 13, 12, Guarantee_Period))
+
+clean_data = clean_data %>% filter((KM > 20000 & KM < 130000))
+clean_data = clean_data %>% filter(Weight < 1075 & Weight > 1010)
+#clean_data = clean_data %>% filter(Price > 6500 & Price < 14500)
+
+
+clean_data = select(clean_data, -c("Mfg_Year", "HP", "cc" , "CD_Player" , "BOVAG_Guarantee", "Automatic", "ABS" , "Automatic_airco", "Metallic_Rim", "Backseat_Divider", "Boardcomputer", "Fuel_Type_Petrol","Quarterly_Tax", "Sport_Model","Guarantee_Period", "Mfr_Guarantee", "Tow_Bar", "Powered_Windows", "Airco" ))
+
+```
+
+## Dimensión post Limpieza
+```{r}
+dim(clean_data)
+```
+* Se descartó un 50% de los datos del modelo. 
+
+## Estudio de correlacion post selección de atributos 1°
+```{r Estudio de correlacion DataSet 1 post selección de atributos 1°}
+corrplot(cor(clean_data), type="upper", method="pie")
+cor(clean_data)
+```
+
+## Busqueda de posible Colinealidad post selección de atributos 1°
+
+```{r Calculo de VIF y TOL sobre DataSet 1 post selección de atributos 1°}
+imcdiag(select(clean_data, -c("Price")), clean_data$Price)
+```
+
+# Modelo de Regresión Lineal post selección de atributos 1°
+
+```{r Modelo de Regresión Lineal 2°}
+linearMod_1 <- lm(formula = Price ~ ., data=clean_data)
+summary(linearMod_1)
+```
+
+## Plot Residuos
+
+```{r Plot de residuos 1°}
+par(mfrow=c(2,2))
+plot(linearMod_1)
+```
+
+A partir de este modelo de regresión lineal, observo lo siguiente:  
+
+* En el grafico **Residuals vs Fitted** muestra un conjunto de puntos distribuidos alrrededor de una linea horizontal ubicada cercana a cero, no se observan valores que deformen la linea. Aparentemente no hay relacionanes no lineales que afecten el modelo.   
+
+* En el grafico **Normal Q-Q** muestra que los residuos no cumplen totalmente con una distribucion normal.    
+
+* En el grafico **Scale-Location** muestra un conjunto de puntos distribuidos alrrededor de una linea horizontal , lo cual representa una varianza similar entre los puntos, no se observan valores que deformen la linea, a excepcion de los valores 403, 9 y 686.
+
+* En el grafico **Residuals vs Leverage** se observa que no existen valores que influyen el modelo de forma determinante.
+
+## Plot Residuos: Histograma
+
+```{r Plot de residuos 1°: Histograma}
+residuos = resid(linearMod_1)
+hist(residuos, col = "blue", freq = F)
+lines(density(residuos), col = "red", lwd=2)
+rug(residuos)
+```
+# Prediccion
+
+```{r Prediccion}
+predicciones <- predict(object = linearMod_1, newdata = clean_data)
+plot(predict(linearMod_1), clean_data$Price, ylab="Precio", main = "Valores predecidos vs Actuales", 
+     abline(a=0, b=1, col="blue", lwd=2))
+ 
+```
+
+```{r Histograma Prediccion}
+par(mfrow=c(1,2))
+hist(predicciones)
+hist(clean_data$Price)
+```
+
+```{r RMSE y MAE}
+rmse <- function(error)
+{
+    sqrt(mean(error^2))
+}
+ 
+mae <- function(error)
+{
+    mean(abs(error))
+}
+```
+
+## RMSE y MAE
+
+```{r}
+e <- clean_data$Price - predicciones
+rmse(e)
+mae(e)
+```
+
